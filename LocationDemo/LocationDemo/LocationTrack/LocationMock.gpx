@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<gpx version="1.1" creator="Xcode">
+    <wpt lat="54.14834073" lon="19.40817968">
+        <name>Start point</name>
+        <time>2014-09-24T14:55:37Z</time>
+    </wpt>
+    <wpt lat="54.39860391" lon="18.66260182">
+        <name>Destination point</name>
+        <time>2014-09-24T15:55:45Z</time>
+    </wpt>
+<!--    <wpt lat="51.22738473674537" lon="4.413675644196349">-->
+<!--        <name>N Tantau Ave</name>-->
+<!--        <time>2014-09-24T14:55:50Z</time>-->
+<!--    </wpt>-->
+</gpx>
+
+<!--//+54.14834073,+19.40817968 start
++54.35131360,+18.63589480 additional
+//+54.39860391,+18.66260182 destination 
+
+
+
+37.73471755,-122.45290792 destination2-->
