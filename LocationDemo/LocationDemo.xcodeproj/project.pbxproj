@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4F2E3B832AE7C39600C8D508 /* Double+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2E3B822AE7C39600C8D508 /* Double+Extension.swift */; };
+		4F2E3B862AE7C46500C8D508 /* CarAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2E3B852AE7C46500C8D508 /* CarAnnotation.swift */; };
+		4F2E3B8B2AE7C4B400C8D508 /* AnnotationPosition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2E3B8A2AE7C4B400C8D508 /* AnnotationPosition.swift */; };
 		4FC65CB42AE650AC00D2E2C5 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FC65CB32AE650AC00D2E2C5 /* AppDelegate.swift */; };
 		4FC65CB62AE650AC00D2E2C5 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FC65CB52AE650AC00D2E2C5 /* SceneDelegate.swift */; };
 		4FC65CB82AE650AC00D2E2C5 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FC65CB72AE650AC00D2E2C5 /* ViewController.swift */; };
@@ -19,6 +22,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4F2E3B822AE7C39600C8D508 /* Double+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Double+Extension.swift"; sourceTree = "<group>"; };
+		4F2E3B852AE7C46500C8D508 /* CarAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarAnnotation.swift; sourceTree = "<group>"; };
+		4F2E3B8A2AE7C4B400C8D508 /* AnnotationPosition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationPosition.swift; sourceTree = "<group>"; };
 		4FC65CB02AE650AC00D2E2C5 /* LocationDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LocationDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FC65CB32AE650AC00D2E2C5 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		4FC65CB52AE650AC00D2E2C5 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -44,6 +50,39 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4F2E3B802AE7C36500C8D508 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				4FC65CBC2AE650AD00D2E2C5 /* Assets.xcassets */,
+				4FC65CBE2AE650AD00D2E2C5 /* LaunchScreen.storyboard */,
+			);
+			path = Helpers;
+			sourceTree = "<group>";
+		};
+		4F2E3B812AE7C37E00C8D508 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				4F2E3B822AE7C39600C8D508 /* Double+Extension.swift */,
+			);
+			path = Utils;
+			sourceTree = "<group>";
+		};
+		4F2E3B842AE7C45A00C8D508 /* Annotations */ = {
+			isa = PBXGroup;
+			children = (
+				4F2E3B852AE7C46500C8D508 /* CarAnnotation.swift */,
+			);
+			path = Annotations;
+			sourceTree = "<group>";
+		};
+		4F2E3B892AE7C48E00C8D508 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				4F2E3B8A2AE7C4B400C8D508 /* AnnotationPosition.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
 		4FC65CA72AE650AC00D2E2C5 = {
 			isa = PBXGroup;
 			children = (
@@ -63,13 +102,14 @@
 		4FC65CB22AE650AC00D2E2C5 /* LocationDemo */ = {
 			isa = PBXGroup;
 			children = (
+				4F2E3B892AE7C48E00C8D508 /* Models */,
 				4FC65CCD2AE6A39E00D2E2C5 /* LocationTrack */,
 				4FC65CB32AE650AC00D2E2C5 /* AppDelegate.swift */,
 				4FC65CB52AE650AC00D2E2C5 /* SceneDelegate.swift */,
 				4FC65CB72AE650AC00D2E2C5 /* ViewController.swift */,
 				4FC65CB92AE650AC00D2E2C5 /* Main.storyboard */,
-				4FC65CBC2AE650AD00D2E2C5 /* Assets.xcassets */,
-				4FC65CBE2AE650AD00D2E2C5 /* LaunchScreen.storyboard */,
+				4F2E3B812AE7C37E00C8D508 /* Utils */,
+				4F2E3B802AE7C36500C8D508 /* Helpers */,
 				4FC65CC12AE650AD00D2E2C5 /* Info.plist */,
 			);
 			path = LocationDemo;
@@ -78,6 +118,7 @@
 		4FC65CCD2AE6A39E00D2E2C5 /* LocationTrack */ = {
 			isa = PBXGroup;
 			children = (
+				4F2E3B842AE7C45A00C8D508 /* Annotations */,
 				4FC65CC72AE652FE00D2E2C5 /* LocationManager.swift */,
 				4FC65CC92AE69FAC00D2E2C5 /* UIKitLocationController.swift */,
 				4FC65CCA2AE69FAC00D2E2C5 /* UIKitLocationController.xib */,
@@ -159,7 +200,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				4FC65CC82AE652FE00D2E2C5 /* LocationManager.swift in Sources */,
+				4F2E3B862AE7C46500C8D508 /* CarAnnotation.swift in Sources */,
 				4FC65CB82AE650AC00D2E2C5 /* ViewController.swift in Sources */,
+				4F2E3B8B2AE7C4B400C8D508 /* AnnotationPosition.swift in Sources */,
+				4F2E3B832AE7C39600C8D508 /* Double+Extension.swift in Sources */,
 				4FC65CB42AE650AC00D2E2C5 /* AppDelegate.swift in Sources */,
 				4FC65CB62AE650AC00D2E2C5 /* SceneDelegate.swift in Sources */,
 				4FC65CCB2AE69FAC00D2E2C5 /* UIKitLocationController.swift in Sources */,

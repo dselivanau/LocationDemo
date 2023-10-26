@@ -8,25 +8,31 @@
 import UIKit
 import MapKit
 
-class UIKitLocationController: UIViewController {
+enum TrackType {
+    case foreground
+    case region
+}
+
+final class UIKitLocationController: UIViewController {
     
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var addressPickerImage: UIImageView!
     @IBOutlet weak var addressLabel: UILabel!
     @IBOutlet weak var startTripButton: UIButton!
+    @IBOutlet weak var startRegionTrackButton: UIButton!
     
-    var carPosition: CarPosition?
+    var carPosition: AnnotationPosition?
     var carAnnotationView: MKAnnotationView!
     var carAnnotation: CarAnnotation!
-//    var tripPolyline: MKPolyline!
-//    var oldTripPolyline: MKPolyline!
-//
+//    var dogAnnotation: MKAnnotationView!
     var carPositionTimer = Timer()
+    var currentRoute: MKOverlay?
+    var trackType: TrackType = .foreground
 
     override func viewDidLoad() {
         super.viewDidLoad()
         mapView.delegate = self
-        LocationManager.shared.startTrackLocation()
+        LocationManager.shared.startTrackForegroundLocation()
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -36,34 +42,39 @@ class UIKitLocationController: UIViewController {
     
     deinit {
         print("UIKit location deinited")
-        LocationManager.shared.stopTrackLocation()
+        LocationManager.shared.stopTrackForegroundLocation()
     }
     
     // setVisibleMapRect - отвечает за зум нашей карты отностительно построенного роута
-    func configureTripRoute(setVisibleMapRect: Bool = false) {
-        // Установим дефолтную точку старта и конечной цели из LocationMock в связи с невозожностью общаться через сервер
-//        guard let carLatitude = setVisibleMapRect ? 54.14834073 : carPosition?.latitude, let carLongitude = setVisibleMapRect ? 19.40817968: carPosition?.longitude else { return }
+    private func configureTripRoute(setVisibleMapRect: Bool = false) {
         guard let carLatitude = carPosition?.latitude, let carLongitude = carPosition?.longitude else { return }
         
+        // Создаем реквест по которому будем вычислять роут
         let request = MKDirections.Request()
         request.source = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: carLatitude, longitude: carLongitude), addressDictionary: nil))
         request.destination = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 37.73471755, longitude: -122.45290792), addressDictionary: nil))
         request.transportType = .automobile
         
         let directions = MKDirections(request: request)
-        
-        directions.calculate { [unowned self] response, error in
-            guard let response = response else { return }
+        // Высчитывает всю информарцию роута по начальным и конечным координатам
+        directions.calculate { [weak self] response, error in
+            
+            guard let self = self, let response = response else { return }
             
             for route in response.routes {
-                //Remove exist routes
-                let overlays = self.mapView.overlays
-                self.mapView.removeOverlays(overlays)
-                //Insert to the map new route
-                self.mapView.addOverlay(route.polyline)
+                // Удаляем существующий маршрут
+                if let route = currentRoute {
+                    mapView.removeOverlay(route)
+                }
                 
+                // Накладываем новый сгенерированный маршрут на карту
+                mapView.addOverlay(route.polyline)
+                currentRoute = route.polyline
+                
+                // Если это первый рендер карты - делаем автоматический зум относительно нашего роута с отступом в 30 поинтов от краев экрана, мы хотим это сделать единожды
+                // чтобы исключить зум при каждом пересчете маршрута
                 if setVisibleMapRect {
-                    self.mapView.setVisibleMapRect(route.polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 30, left: 30, bottom: 30, right: 30), animated: true)
+                    mapView.setVisibleMapRect(route.polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 30, left: 30, bottom: 30, right: 30), animated: true)
                 }
             }
         }
@@ -72,40 +83,77 @@ class UIKitLocationController: UIViewController {
             let basePoint = CLLocationCoordinate2D(latitude: carLatitude, longitude: carLongitude)
             let angle = calculateBearingAngle(fromCoordinate: basePoint, toCoordinate: basePoint)
             carAnnotation = CarAnnotation(title: "", coordinate: CLLocationCoordinate2D(latitude: carLatitude, longitude: carLongitude), rotationAnge: angle.toRadians())
+            let annotation = MKPointAnnotation()
+            annotation.coordinate = CLLocationCoordinate2D(latitude: 37.73471755, longitude: -122.45290792)
+            // Добавляем аннотацию
+            mapView.addAnnotation(annotation)
+            // Добавляем аннотацию машины
             mapView.addAnnotation(carAnnotation)
+            if trackType == .region {
+                let regionCenter = CLLocationCoordinate2D(latitude: 37.33453849, longitude: -122.03695223)
+                let regionRadius: CLLocationDistance = 150
+                let regionCircle = MKCircle(center: regionCenter, radius: regionRadius)
+                // Добавляем overlay для отрисовки региона
+                mapView.addOverlay(regionCircle)
+            }
         } else {
             let point1 = CLLocationCoordinate2D(latitude: carAnnotation.oldCoordinates.latitude, longitude: carAnnotation.oldCoordinates.longitude)
             let point2 = CLLocationCoordinate2D(latitude: carLatitude, longitude: carLongitude)
             let angle = calculateBearingAngle(fromCoordinate: point1, toCoordinate: point2)
 
-            guard let annotation = mapView.annotations.first else { return }
+            // При каждой итерации таймера нам нужно анимировать движение машины по направлению маршрута
+            // Находим аннотацию машины в коллекции аннотаций
+            guard let annotation = mapView.annotations.first(where: { $0 is CarAnnotation }) else { return }
+            // Находим соответстующую вью для аннотации машины, которую в дальнешем мы сможем анимировать
             if let customAnnotationView = mapView.view(for: annotation) {
+                // Анимируем угол поворота относительно направления движения
+                // Рекомендую поставить это значение в разы меньше(по моим наблюдениям для движения автомобиля отлично подходят значения от 1 до 2), иначе поворот угла выглядет
+                // не естественным из-за плавности и большой длительности
                 UIView.animate(withDuration: 1, delay: 0, options: [.curveLinear]) {
                     customAnnotationView.transform = CGAffineTransform(rotationAngle: angle.toRadians())
                 }
             }
+            // Анимируем движение между 2 координатами
+            // Длительность анимации равна периодичности таймера, чтобы движение ощущалось плавным и постоянным
             UIView.animate(withDuration: 2.5, delay: 0, options: [.curveLinear]) { [weak self] in
                 self?.carAnnotation.coordinate = CLLocationCoordinate2D(latitude: carLatitude, longitude: carLongitude)
             }
+            // Тип анимации для всего что связано с автомобилем рекомендую curveLinear для исключения дерганного поведения и постоянных ускорений/замедлений что, как по мне,
+            // выглядит довольно не естественно
         }
     }
 
     @IBAction func startTripAction(_ sender: Any) {
+        startTrack(.foreground)
+    }
+    
+    @IBAction func startRegionTrackAction(_ sender: Any) {
+        startTrack(.region)
+        LocationManager.shared.startMonitorRegionLocation()
+    }
+    
+    private func startTrack(_ trackType: TrackType) {
+        self.trackType = trackType
         addressPickerImage.isHidden = true
         startTripButton.isHidden = true
+        startRegionTrackButton.isHidden = true
         addressLabel.isHidden = true
-        carPosition = CarPosition(latitude: LocationManager.shared.latitude, longitude: LocationManager.shared.longitude)
+        carPosition = AnnotationPosition(latitude: LocationManager.shared.latitude, longitude: LocationManager.shared.longitude)
         configureTripRoute(setVisibleMapRect: true)
         carPositionTimer = Timer.scheduledTimer(timeInterval: 2.5, target: self, selector: #selector(updateCarPosition), userInfo: nil, repeats: true)
     }
     
     @objc
     private func updateCarPosition() {
+        if carPosition?.latitude == LocationManager.shared.latitude && carPosition?.longitude == LocationManager.shared.longitude {
+            return
+        }
         carPosition?.latitude = LocationManager.shared.latitude
         carPosition?.longitude = LocationManager.shared.longitude
         configureTripRoute()
     }
     
+    // Вычисляем угол на который нужно повернуть машину между 2 точками по пути движения
     func calculateBearingAngle(fromCoordinate startCoordinate: CLLocationCoordinate2D, toCoordinate endCoordinate: CLLocationCoordinate2D) -> CLLocationDegrees {
         let lat1 = startCoordinate.latitude.toRadians()
         let lon1 = startCoordinate.longitude.toRadians()
@@ -126,18 +174,32 @@ class UIKitLocationController: UIViewController {
 
 extension UIKitLocationController: MKMapViewDelegate {
     
+    // Определяем внешний вид добавленных overlay
     func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+        // Отрисовка круга для мониторинга региона
+        if overlay is MKCircle {
+            let circleRenderer = MKCircleRenderer(overlay: overlay)
+            circleRenderer.fillColor = UIColor.blue.withAlphaComponent(0.3)
+            circleRenderer.strokeColor = UIColor.blue
+            circleRenderer.lineWidth = 1
+            return circleRenderer
+        }
+        
+        // Соответсует нашей линии роута
         let renderer = MKPolylineRenderer(polyline: overlay as! MKPolyline)
         renderer.strokeColor = .systemBlue
         renderer.lineWidth = 2
         return renderer
     }
     
+    // Отрисовываем аннотации в зависимости от их типа
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         guard !(annotation is MKUserLocation) else { return nil }
         
+        // Устанавливаем стандартную вью для всех аннотаций
         var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: "annotation")
-                
+        
+        // Если есть кастомные аннотации - можем их найти и закастомизировать
         if annotation is CarAnnotation {
             annotationView = MKAnnotationView(annotation: annotation, reuseIdentifier: String(describing: CarAnnotation.self))
             annotationView?.image = UIImage(resource: .car)
@@ -145,53 +207,26 @@ extension UIKitLocationController: MKMapViewDelegate {
             carAnnotationView = annotationView
             return annotationView
         } else {
-            return nil
+            annotationView = MKAnnotationView(annotation: annotation, reuseIdentifier: "annotation")
+            annotationView?.image = UIImage(resource: .dog1)
+            annotationView?.layer.cornerRadius = (annotationView?.frame.height ?? 25) / 2
+            annotationView?.layer.masksToBounds = true
+            return annotationView
         }
     }
     
+    // Делегат отрабатывает когда карта начинает менять свое положение
     func mapView(_ mapView: MKMapView, regionWillChangeAnimated animated: Bool) {
-        //Triggered before the map camera will change
         addressLabel.text = ""
         startTripButton.isEnabled = false
     }
     
+    // Делегат отрабатывает когда камера карты останавливается
     func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-        //Triggered when the map camera changed did stop
         let location = mapView.camera.centerCoordinate
         LocationManager.shared.geocodeLocation(lattitude: location.latitude, longitude: location.longitude) { [weak self] value in
             self?.addressLabel.text = value ?? ""
             self?.startTripButton.isEnabled = value != nil
         }
-    }
-}
-
-class CarAnnotation: NSObject, MKAnnotation {
-    let title: String?
-    dynamic var coordinate: CLLocationCoordinate2D {
-        didSet {
-            oldCoordinates = oldValue
-        }
-    }
-    dynamic var oldCoordinates = CLLocationCoordinate2D(latitude: 0, longitude: 0)
-    dynamic var rotationAnge: CLLocationDegrees
-    init(title: String, coordinate: CLLocationCoordinate2D, rotationAnge: CLLocationDegrees) {
-        self.title = title
-        self.coordinate = coordinate
-        self.rotationAnge = rotationAnge
-    }
-}
-
-struct CarPosition {
-    var latitude: CLLocationDegrees
-    var longitude: CLLocationDegrees
-}
-
-extension Double {
-    func toRadians() -> Double {
-        return self * .pi / 180.0
-    }
-
-    func toDegrees() -> Double {
-        return self * 180.0 / .pi
     }
 }

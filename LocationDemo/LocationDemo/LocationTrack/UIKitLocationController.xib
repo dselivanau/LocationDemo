@@ -14,6 +14,7 @@
                 <outlet property="addressLabel" destination="UgF-c9-PKd" id="jks-kY-SzK"/>
                 <outlet property="addressPickerImage" destination="hJK-g7-1aW" id="9Zx-L2-LLr"/>
                 <outlet property="mapView" destination="jgt-vo-ukn" id="qKm-Cx-y9G"/>
+                <outlet property="startRegionTrackButton" destination="eQ8-1r-jWz" id="c12-Dd-xJ2"/>
                 <outlet property="startTripButton" destination="iee-xh-eQX" id="WEm-TD-AlH"/>
                 <outlet property="view" destination="i5M-Pr-FkT" id="sfx-zR-JGt"/>
             </connections>
@@ -35,10 +36,10 @@
                     <nil key="highlightedColor"/>
                 </label>
                 <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="iee-xh-eQX">
-                    <rect key="frame" x="151" y="783" width="91" height="35"/>
+                    <rect key="frame" x="144" y="740" width="105" height="35"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                     <state key="normal" title="Button"/>
-                    <buttonConfiguration key="configuration" style="filled" title="Start trip"/>
+                    <buttonConfiguration key="configuration" style="filled" title="Start track"/>
                     <connections>
                         <action selector="startTripAction:" destination="-1" eventType="touchUpInside" id="h1c-cO-2rX"/>
                     </connections>
@@ -48,6 +49,15 @@
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                     <color key="tintColor" systemColor="systemRedColor"/>
                 </imageView>
+                <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="eQ8-1r-jWz">
+                    <rect key="frame" x="118" y="783" width="157" height="35"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                    <state key="normal" title="Button"/>
+                    <buttonConfiguration key="configuration" style="filled" title="Start region track"/>
+                    <connections>
+                        <action selector="startRegionTrackAction:" destination="-1" eventType="touchUpInside" id="xij-qf-bBj"/>
+                    </connections>
+                </button>
             </subviews>
             <viewLayoutGuide key="safeArea" id="fnl-2z-Ty3"/>
             <color key="backgroundColor" systemColor="systemBackgroundColor"/>
@@ -65,7 +75,7 @@
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
         <systemColor name="systemRedColor">
-            <color red="1" green="0.23137254900000001" blue="0.18823529410000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="1" green="0.23137254901960785" blue="0.18823529411764706" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

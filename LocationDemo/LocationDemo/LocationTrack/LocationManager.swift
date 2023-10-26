@@ -7,23 +7,19 @@
 
 import Foundation
 import CoreLocation
+import UIKit
 
 final class LocationManager: NSObject {
     static let shared = LocationManager()
         
     private let locationManager = CLLocationManager()
-//    private let regionRadiusToTriggerLocationUpdate = CLLocationDistance(300)
-//    private let activeLocationMonitorKey = "activeLocationMonitor"
-//    private let driverLocationRegionKey = "driver_location"
-//    private let minuteDistanceBetweenStartEndTrip = 10
+    // Минимальный пройденный путь от предыдущей точки при котором сервис будет обновлять текущую локацию
+    private let regionRadiusToTriggerLocationUpdate = CLLocationDistance(100)
+    private let driverLocationRegionKey = "car_location"
 
-//    private var currentTripTimer = Timer()
     private(set) var latitude = 0.0
     private(set) var longitude = 0.0
     private let geocoder = CLGeocoder()
-//    private var activeGeofenceRegion: CLRegion?
-//    private var currentTrip: LocationMonitorModel?
-//    var apnsTripAgreementId: String?
     
     private override init() {
         super.init()
@@ -33,200 +29,62 @@ final class LocationManager: NSObject {
         locationManager.allowsBackgroundLocationUpdates = true
         locationManager.showsBackgroundLocationIndicator = true
         
-//        NotificationCenter.default.addObserver(self,
-//                                               selector: #selector(appTerminated),
-//                                               name: UIApplication.willTerminateNotification,
-//                                               object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(appTerminated),
+                                               name: UIApplication.willTerminateNotification,
+                                               object: nil)
     }
     
-    func startTrackLocation() {
+    func startTrackForegroundLocation() {
         locationManager.startUpdatingLocation()
     }
     
-    func stopTrackLocation() {
+    func stopTrackForegroundLocation() {
         locationManager.stopUpdatingLocation()
+    }
+    
+    private func stopLocationTrack() {
+        stopTrackForegroundLocation()
     }
     
     func geocodeLocation(lattitude: CLLocationDegrees, longitude: CLLocationDegrees, completion: @escaping (String?) -> Void) {
         let location = CLLocation(latitude: lattitude, longitude: longitude)
         return geocoder.reverseGeocodeLocation(location, completionHandler: { (placemarks, error) in
-            print(placemarks)
             guard let placemark = placemarks?.first else { completion(""); return }
             completion(placemark.name)
-//            return placemark.name
-//            for placemark in placemarks! {
-//                
-//                print("Name: \(placemark.name ?? "Empty")")
-//                print("Country: \(placemark.country ?? "Empty")")
-//                print("ISOcountryCode: \(placemark.isoCountryCode ?? "Empty")")
-//                print("administrativeArea: \(placemark.administrativeArea ?? "Empty")")
-//                print("subAdministrativeArea: \(placemark.subAdministrativeArea ?? "Empty")")
-//                print("Locality: \(placemark.locality ?? "Empty")")
-//                print("PostalCode: \(placemark.postalCode ?? "Empty")")
-//                print("areaOfInterest: \(placemark.areasOfInterest ?? ["Empty"])")
-//                print("Ocean: \(placemark.ocean ?? "Empty")")
-//                
-//                // Change the title and subtitle of pin.
-//                self._pin.title = "\(placemark.country ?? "Empty")"
-//                self._pin.subtitle = "\(placemark.name ?? "Empty")"
-//            }
         })
     }
     
-//    func startTrackCurrentPosition() {
-//        locationManager.startUpdatingLocation()
-//    }
-//        
-//    @objc
-//    private func appTerminated() {
-//        if currentTrip == nil { return }
-//        startMonitorRegionLocation()
-//    }
+    @objc
+    private func appTerminated() {
+        startMonitorRegionLocation()
+    }
     
-//    func checkActiveMonitor() {
-//        currentTrip = UserDefaultManager.getCodableObject(key: activeLocationMonitorKey)
-//        guard let currentTrip = currentTrip, isActiveLocationTrackValid(activeTrip: currentTrip) else { return }
-//        
-//        startMonitorForegroundLocation()
-//    }
-    
-//    func prepareActiveAgreementToMonitor() {
-//        guard let userId = UserSettings.shared.userId, let apnsTripAgreementId = apnsTripAgreementId else { return }
-//        ApiNetworkManager.shared.api_GetSingleDayCarpoolAgreement(requesterId: userId, agreementId: apnsTripAgreementId, showLoader: false) { [unowned self] result in
-//            switch result {
-//            case .success(let trip):
-//                guard userId == trip.participants?.first(where: { $0.driver ?? false })?.person?.id else {
-//                    self.apnsTripAgreementId = nil
-//                    return
-//                }
-//                self.startMonitorLocation(currentTrip: trip)
-//            case .failure(_):
-//                self.stopLocationTrack()
-//            }
-//        }
-//    }
-    
-//    func startMonitorLocation(currentTrip: ClassCreateSingleDayAgreement) {
-//        //To be sure if to become one more unexpected track request - existing track will be stopped
-//        stopLocationTrack()
-//        
-//        guard let person = currentTrip.participants?.first,
-//              let morningTrip = person.homeWorkTrip?.arrivalTimeWindow,
-//              let morningStringStartDate = morningTrip.start,
-//              let morningStringEndDate = morningTrip.end,
-//              let morningStartDate = convertStringToDateWithinCurrentDay(date: morningStringStartDate)?.adding(minutes: -minuteDistanceBetweenStartEndTrip),
-//              let morningEndDate = convertStringToDateWithinCurrentDay(date: morningStringEndDate),
-//              let tripTypeIdentifier: AgreementTripType = Date().isBetween(morningStartDate, morningEndDate) ? .hw : .wh,
-//              let expireDate = tripTypeIdentifier == .hw ? morningEndDate.adding(minutes: minuteDistanceBetweenStartEndTrip) : convertStringToDateWithinCurrentDay(date: person.workHomeTrip?.departureTimeWindow?.end ?? "")
-//        else { return }
-//                
-//        guard let agreementId = currentTrip.id else { return }
-//        let monitorModel = LocationMonitorModel(agreementId: agreementId, tripType: tripTypeIdentifier, expireDate: expireDate)
-//        self.currentTrip = monitorModel
-//        UserDefaultManager.setCodableObject(object: monitorModel, key: activeLocationMonitorKey)
-//        startMonitorForegroundLocation()
-//    }
-    
-//    private func convertStringToDateWithinCurrentDay(date: String) -> Date? {
-//        return date.toDateWithinCurrentDay(dateFormat: "HH:mm:ss")
-//    }
-    
-//    func startMonitorForegroundLocation() {
-//        stopMonitorRegionLocation()
-//        locationManager.startUpdatingLocation()
-//        currentTripTimer = Timer.scheduledTimer(timeInterval: 5, target: self, selector: #selector(foregroundLocationRequestTimer), userInfo: nil, repeats: true)
-//        currentTripTimer.tolerance = 5
-//    }
-//    
-//    @objc
-//    private func foregroundLocationRequestTimer() {
-//        sendCurrentLocationToServer()
-//    }
-//    
-//    func startMonitorRegionLocation() {
-//        stopMonitorForegroundLocation()
-//        locationManager.showsBackgroundLocationIndicator = false
-//        
-//        guard CLLocationManager.isMonitoringAvailable(for: CLCircularRegion.self) else {
-//            UM.showMessageNew("Geofencing is not supported on this device")
-//            return
-//        }
-//        
-//        guard locationManager.authorizationStatus == .authorizedAlways else {
-//            UM.showMessageNew("Wrong location permissions. To share you location in background, please, turn on \"Always\" access")
-//            return
-//        }
-//        
-//        //TODO: There is possible to get wrong accurancy of location because of range. Have to check with real tests
-//        locationManager.distanceFilter = regionRadiusToTriggerLocationUpdate
-//        prepareAndStartTrackRegion(latitude: latitude, longitude: longitude)
-//    }
-//    
-//    private func prepareAndStartTrackRegion(latitude: CLLocationDegrees, longitude: CLLocationDegrees) {
-//        let regionCoordinate: CLLocationCoordinate2D = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-//        activeGeofenceRegion = CLCircularRegion(center: regionCoordinate,
-//                                                radius: regionRadiusToTriggerLocationUpdate,
-//                                                identifier: driverLocationRegionKey)
-//        
-//        activeGeofenceRegion?.notifyOnExit = true
-//        guard let region = activeGeofenceRegion else { return }
-//        locationManager.startMonitoring(for: region)
-//    }
-//    
-//    func stopLocationTrack() {
-//        locationManager.stopUpdatingLocation()
-//        stopMonitorRegionLocation()
-//        stopMonitorForegroundLocation()
-//        currentTrip = nil
-//        apnsTripAgreementId = nil
-//        UserDefaultManager.removeCustomObject(key: activeLocationMonitorKey)
-//    }
-//    
-//    private func stopMonitorRegionLocation() {
-//        if let region = activeGeofenceRegion {
-//            locationManager.stopMonitoring(for: region)
-//            activeGeofenceRegion = nil
-//        }
-//    }
-//    
-//    private func stopMonitorForegroundLocation() {
-//        currentTripTimer.invalidate()
-//    }
-//    
-//    func sendCurrentLocationToServer() {
-//        guard let activeTrip = currentTrip, let userId = UserSettings.shared.userId, isActiveLocationTrackValid(activeTrip: activeTrip) else {
-//            stopLocationTrack()
-//            return
-//        }
-//        
-//        let urlParam: Parameters = [
-//            "agreementId": activeTrip.agreementId,
-//            "tripType": activeTrip.tripType.rawValue
-//        ]
-//        
-//        var parame: Parameters = [:]
-//        if self.latitude != 0.0 && self.longitude != 0.0 {
-//            parame = [
-//                "lat": self.latitude,
-//                "lon": self.longitude
-//            ]
-//        }
-//                
-//        ApiNetworkManager.shared.api_POSTSendCurrentPosition(accountId: userId, urlParam: urlParam, param: parame, showLoader: false) { result in
-//            switch result {
-//            case .success(_):
-//                print("Current location updated on the server")
-//            case .failure(let error):
-//                UM.showMessage(error.localizedDescription)
-//            }
-//        }
-//    }
-//    
-//    private func isActiveLocationTrackValid(activeTrip: LocationMonitorModel) -> Bool {
-//        guard UserSettings.shared.userId != nil,
-//              activeTrip.expireDate.timeIntervalSinceReferenceDate > Date.now.timeIntervalSinceReferenceDate else { return false }
-//        return true
-//    }
+    func startMonitorRegionLocation() {
+        guard CLLocationManager.isMonitoringAvailable(for: CLCircularRegion.self) else {
+            // Трэк регионов не доступен на устройстве
+            print("Geofencing is not supported on this device")
+            return
+        }
+        
+        guard locationManager.authorizationStatus == .authorizedAlways else {
+            // Недостаточно пермишенов. Трэк региона доступен только для Always пермишена
+            print("Wrong location permissions. To share you location in background, please, turn on \"Always\" access")
+            return
+        }
+        
+        // Минимальное значение в метрах, при которых треггерятся методы отслеживания регионов
+        locationManager.distanceFilter = regionRadiusToTriggerLocationUpdate
+        let activeGeofenceRegion = CLCircularRegion(center: CLLocationCoordinate2D(latitude: 37.33453849, longitude: -122.03695223),
+                                                    radius: regionRadiusToTriggerLocationUpdate,
+                                                    identifier: driverLocationRegionKey)
+        
+        // Позволять отслежить вход в наблюдаемый регион
+        activeGeofenceRegion.notifyOnEntry = true
+        // Позволять отслежить выход из наблюдаемого региона
+        activeGeofenceRegion.notifyOnExit = true
+        locationManager.startMonitoring(for: activeGeofenceRegion)
+    }
 }
 
 extension LocationManager: CLLocationManagerDelegate {
@@ -254,23 +112,19 @@ extension LocationManager: CLLocationManagerDelegate {
         latitude = location.coordinate.latitude
         longitude = location.coordinate.longitude
         
-        print("Current location from update delegate method: (\(latitude), \(longitude))")
+        print("Current device location from update delegate method: (\(latitude), \(longitude))")
     }
-        
+    
+    func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
+        sendNotification("Region track delegate", "Did enter region", 5)
+    }
+    
     func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
-//        locationManager.stopMonitoring(for: region)
-//        
-//        guard let location = manager.location else {
-//            stopLocationTrack()
-//            return
-//        }
-//        
-//        latitude = location.coordinate.latitude
-//        longitude = location.coordinate.longitude
-//        prepareAndStartTrackRegion(latitude: latitude, longitude: longitude)
-//        
-//        currentTrip = UserDefaultManager.getCodableObject(key: activeLocationMonitorKey)
-//        sendCurrentLocationToServer()
+        sendNotification("Region track delegate", "Did exit region", 5)
+        // Если после прохождения наблюдаемого региона он больше не нужен - удалите его из коллекции регионов
+        for region in locationManager.monitoredRegions {
+            locationManager.stopMonitoring(for: region)
+        }
     }
     
     func locationManager(_ manager: CLLocationManager, monitoringDidFailFor region: CLRegion?, withError error: Error) {
@@ -285,6 +139,29 @@ extension LocationManager: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print("Error getting location: \(error.localizedDescription)")
     }
+    
+    private func sendNotification(_ title: String, _ body: String, _ interval: Int) {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = UNNotificationSound.default
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
+        let request = UNNotificationRequest(identifier: "myNotification", content: content, trigger: trigger)
+        UNUserNotificationCenter.current().add(request)
+    }
 }
-//+54.14834073,+19.40817968 start
-//+54.39860391,+18.66260182 destination
+
+//Current device location from update delegate method: (37.33477977, -122.03369603)
+//Current device location from update delegate method: (37.33474691, -122.03389325)
+//Current device location from update delegate method: (37.33470894, -122.03411085) -- current
+//Current device location from update delegate method: (37.33467638, -122.03432425)
+//Current device location from update delegate method: (37.33464561, -122.03455442)
+//Current device location from update delegate method: (37.33461946, -122.03478727)
+//Current device location from update delegate method: (37.33460316, -122.0350347)
+//Current device location from update delegate method: (37.33458564, -122.03529395)
+//Current device location from update delegate method: (37.3345628, -122.03556217)
+//Current device location from update delegate method: (37.3345597, -122.03583308)
+//Current device location from update delegate method: (37.33454847, -122.03611286)
+//Current device location from update delegate method: (37.33454218, -122.03638578)
+//Current device location from update delegate method: (37.33454235, -122.03666775)
+//Current device location from update delegate method: (37.33453849, -122.03695223)

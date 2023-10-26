@@ -8,11 +8,6 @@
 import UIKit
 import MapKit
 
-struct TripModel: Codable {
-    let agreementId: String
-    let expireDate: Date
-}
-
 class ViewController: UIViewController {
     
     override func viewDidLoad() {
