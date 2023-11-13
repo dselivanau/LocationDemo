@@ -35,6 +35,12 @@ final class LocationManager: NSObject {
                                                object: nil)
     }
     
+    func checkMonitor() {
+        locationManager.startUpdatingLocation()
+//        stopMonitorRegionLocation()
+//        locationManager.startUpdatingLocation()
+    }
+    
     func startTrackForegroundLocation() {
         locationManager.startUpdatingLocation()
     }
@@ -125,6 +131,8 @@ extension LocationManager: CLLocationManagerDelegate {
         for region in locationManager.monitoredRegions {
             locationManager.stopMonitoring(for: region)
         }
+        
+        
     }
     
     func locationManager(_ manager: CLLocationManager, monitoringDidFailFor region: CLRegion?, withError error: Error) {
@@ -139,7 +147,7 @@ extension LocationManager: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print("Error getting location: \(error.localizedDescription)")
     }
-    
+        
     private func sendNotification(_ title: String, _ body: String, _ interval: Int) {
         let content = UNMutableNotificationContent()
         content.title = title
@@ -150,18 +158,3 @@ extension LocationManager: CLLocationManagerDelegate {
         UNUserNotificationCenter.current().add(request)
     }
 }
-
-//Current device location from update delegate method: (37.33477977, -122.03369603)
-//Current device location from update delegate method: (37.33474691, -122.03389325)
-//Current device location from update delegate method: (37.33470894, -122.03411085) -- current
-//Current device location from update delegate method: (37.33467638, -122.03432425)
-//Current device location from update delegate method: (37.33464561, -122.03455442)
-//Current device location from update delegate method: (37.33461946, -122.03478727)
-//Current device location from update delegate method: (37.33460316, -122.0350347)
-//Current device location from update delegate method: (37.33458564, -122.03529395)
-//Current device location from update delegate method: (37.3345628, -122.03556217)
-//Current device location from update delegate method: (37.3345597, -122.03583308)
-//Current device location from update delegate method: (37.33454847, -122.03611286)
-//Current device location from update delegate method: (37.33454218, -122.03638578)
-//Current device location from update delegate method: (37.33454235, -122.03666775)
-//Current device location from update delegate method: (37.33453849, -122.03695223)

@@ -20,11 +20,11 @@ final class UIKitLocationController: UIViewController {
     @IBOutlet weak var addressLabel: UILabel!
     @IBOutlet weak var startTripButton: UIButton!
     @IBOutlet weak var startRegionTrackButton: UIButton!
+    @IBOutlet weak var trackUserImageView: UIImageView!
     
     var carPosition: AnnotationPosition?
     var carAnnotationView: MKAnnotationView!
     var carAnnotation: CarAnnotation!
-//    var dogAnnotation: MKAnnotationView!
     var carPositionTimer = Timer()
     var currentRoute: MKOverlay?
     var trackType: TrackType = .foreground
@@ -33,6 +33,10 @@ final class UIKitLocationController: UIViewController {
         super.viewDidLoad()
         mapView.delegate = self
         LocationManager.shared.startTrackForegroundLocation()
+        mapView.showsUserTrackingButton = true
+        // Если вы хотите отслежить себя на карте - можно оперировать пропертей которая закоменчена ниже
+        // Однако если аннотация MKUserLocation переопределена и скрыта - изменение этого свойства ничего не даст
+//        mapView.showsUserLocation = true
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -83,12 +87,12 @@ final class UIKitLocationController: UIViewController {
             let basePoint = CLLocationCoordinate2D(latitude: carLatitude, longitude: carLongitude)
             let angle = calculateBearingAngle(fromCoordinate: basePoint, toCoordinate: basePoint)
             carAnnotation = CarAnnotation(title: "", coordinate: CLLocationCoordinate2D(latitude: carLatitude, longitude: carLongitude), rotationAnge: angle.toRadians())
-            let annotation = MKPointAnnotation()
-            annotation.coordinate = CLLocationCoordinate2D(latitude: 37.73471755, longitude: -122.45290792)
             // Добавляем аннотацию
-            mapView.addAnnotation(annotation)
+            mapView.addAnnotation(DogAnnotation(coordinate: CLLocationCoordinate2D(latitude: 37.73471755, longitude: -122.45290792)))
             // Добавляем аннотацию машины
             mapView.addAnnotation(carAnnotation)
+            // Добавляем кастомную аннотацию для демонстрации простых глифов
+            mapView.addAnnotation(CustomAnnotation(coordinate: CLLocationCoordinate2D(latitude: 37.53471755, longitude: -122.35290792)))
             if trackType == .region {
                 let regionCenter = CLLocationCoordinate2D(latitude: 37.33453849, longitude: -122.03695223)
                 let regionRadius: CLLocationDistance = 150
@@ -108,7 +112,7 @@ final class UIKitLocationController: UIViewController {
             if let customAnnotationView = mapView.view(for: annotation) {
                 // Анимируем угол поворота относительно направления движения
                 // Рекомендую поставить это значение в разы меньше(по моим наблюдениям для движения автомобиля отлично подходят значения от 1 до 2), иначе поворот угла выглядет
-                // не естественным из-за плавности и большой длительности
+                // не естественным из-за плавности и большой/короткой длительности
                 UIView.animate(withDuration: 1, delay: 0, options: [.curveLinear]) {
                     customAnnotationView.transform = CGAffineTransform(rotationAngle: angle.toRadians())
                 }
@@ -129,7 +133,7 @@ final class UIKitLocationController: UIViewController {
     
     @IBAction func startRegionTrackAction(_ sender: Any) {
         startTrack(.region)
-        LocationManager.shared.startMonitorRegionLocation()
+//        LocationManager.shared.startMonitorRegionLocation()
     }
     
     private func startTrack(_ trackType: TrackType) {
@@ -194,23 +198,38 @@ extension UIKitLocationController: MKMapViewDelegate {
     
     // Отрисовываем аннотации в зависимости от их типа
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
-        guard !(annotation is MKUserLocation) else { return nil }
+        // Данный тип аннотации отвечает за текущее расположения девайса
+        // Если мы включаем автоматическое следование карты за изменением положения устройства - эта аннотация будет появлятся автоматически
+        // Если вы хотите включить следование карты без отображения аннотации текущего положения - можно аннотацию переопределить и скрыть ее видимость, например
+        guard !(annotation is MKUserLocation) else {
+            let userAnnotation = MKUserLocationView()
+            userAnnotation.isHidden = true
+            return userAnnotation
+        }
         
         // Устанавливаем стандартную вью для всех аннотаций
         var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: "annotation")
         
         // Если есть кастомные аннотации - можем их найти и закастомизировать
-        if annotation is CarAnnotation {
+        switch annotation {
+        case is CarAnnotation:
             annotationView = MKAnnotationView(annotation: annotation, reuseIdentifier: String(describing: CarAnnotation.self))
             annotationView?.image = UIImage(resource: .car)
             annotationView?.layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
             carAnnotationView = annotationView
             return annotationView
-        } else {
-            annotationView = MKAnnotationView(annotation: annotation, reuseIdentifier: "annotation")
+        case is CustomAnnotation:
+            let customAnnotation = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: String(describing: CustomAnnotation.self))
+            customAnnotation.glyphImage = UIImage(systemName: "dog")
+            customAnnotation.selectedGlyphImage = UIImage(systemName: "tree")
+            return customAnnotation
+        case is DogAnnotation:
+            annotationView = MKAnnotationView(annotation: annotation, reuseIdentifier: String(describing: DogAnnotation.self))
             annotationView?.image = UIImage(resource: .dog1)
             annotationView?.layer.cornerRadius = (annotationView?.frame.height ?? 25) / 2
             annotationView?.layer.masksToBounds = true
+            return annotationView
+        default:
             return annotationView
         }
     }
@@ -229,4 +248,29 @@ extension UIKitLocationController: MKMapViewDelegate {
             self?.startTripButton.isEnabled = value != nil
         }
     }
+    
+    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+        print("Selected view \(view)")
+    }
+    
+    func mapView(_ mapView: MKMapView, didSelect annotation: MKAnnotation) {
+        print("Selected annotation \(annotation)")
+    }
+    
+    func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
+        print("Deselected view \(view)")
+    }
+    
+    func mapView(_ mapView: MKMapView, didDeselect annotation: MKAnnotation) {
+        print("Deselected annotation \(annotation)")
+    }
+    
+    func mapView(_ mapView: MKMapView, didChange mode: MKUserTrackingMode, animated: Bool) {
+        print("Did changed track mode")
+    }
+    
+    func mapView(_ mapView: MKMapView, didUpdate userLocation: MKUserLocation) {
+        print("Location user did update from delegate")
+    }
+    
 }

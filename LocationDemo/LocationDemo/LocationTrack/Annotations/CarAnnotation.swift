@@ -9,7 +9,7 @@ import Foundation
 import CoreLocation
 import MapKit
 
-class CarAnnotation: NSObject, MKAnnotation {
+final class CarAnnotation: NSObject, MKAnnotation {
     let title: String?
     dynamic var coordinate: CLLocationCoordinate2D {
         didSet {
