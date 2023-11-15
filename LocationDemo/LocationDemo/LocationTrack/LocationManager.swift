@@ -14,11 +14,12 @@ final class LocationManager: NSObject {
         
     private let locationManager = CLLocationManager()
     // Минимальный пройденный путь от предыдущей точки при котором сервис будет обновлять текущую локацию
-    private let regionRadiusToTriggerLocationUpdate = CLLocationDistance(100)
+    let regionRadiusToTriggerLocationUpdate = CLLocationDistance(150)
     private let driverLocationRegionKey = "car_location"
 
-    private(set) var latitude = 0.0
-    private(set) var longitude = 0.0
+    // Дефолтные значения начальных координат пользователя для демо
+    private(set) var latitude = 37.33521504
+    private(set) var longitude = -122.03254905
     private let geocoder = CLGeocoder()
     
     private override init() {
@@ -36,9 +37,7 @@ final class LocationManager: NSObject {
     }
     
     func checkMonitor() {
-        locationManager.startUpdatingLocation()
-//        stopMonitorRegionLocation()
-//        locationManager.startUpdatingLocation()
+        //
     }
     
     func startTrackForegroundLocation() {
@@ -78,7 +77,7 @@ final class LocationManager: NSObject {
             print("Wrong location permissions. To share you location in background, please, turn on \"Always\" access")
             return
         }
-        
+        locationManager.startUpdatingLocation()
         // Минимальное значение в метрах, при которых треггерятся методы отслеживания регионов
         locationManager.distanceFilter = regionRadiusToTriggerLocationUpdate
         let activeGeofenceRegion = CLCircularRegion(center: CLLocationCoordinate2D(latitude: 37.33453849, longitude: -122.03695223),
@@ -131,8 +130,6 @@ extension LocationManager: CLLocationManagerDelegate {
         for region in locationManager.monitoredRegions {
             locationManager.stopMonitoring(for: region)
         }
-        
-        
     }
     
     func locationManager(_ manager: CLLocationManager, monitoringDidFailFor region: CLRegion?, withError error: Error) {

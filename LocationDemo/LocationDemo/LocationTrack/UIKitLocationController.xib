@@ -11,11 +11,8 @@
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="UIKitLocationController" customModule="LocationDemo" customModuleProvider="target">
             <connections>
-                <outlet property="addressLabel" destination="UgF-c9-PKd" id="jks-kY-SzK"/>
                 <outlet property="addressPickerImage" destination="hJK-g7-1aW" id="9Zx-L2-LLr"/>
                 <outlet property="mapView" destination="jgt-vo-ukn" id="qKm-Cx-y9G"/>
-                <outlet property="startRegionTrackButton" destination="eQ8-1r-jWz" id="c12-Dd-xJ2"/>
-                <outlet property="startTripButton" destination="iee-xh-eQX" id="WEm-TD-AlH"/>
                 <outlet property="view" destination="i5M-Pr-FkT" id="sfx-zR-JGt"/>
             </connections>
         </placeholder>
@@ -29,43 +26,14 @@
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                     <standardMapConfiguration key="preferredConfiguration"/>
                 </mapView>
-                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="UgF-c9-PKd">
-                    <rect key="frame" x="20" y="79" width="353" height="0.0"/>
-                    <fontDescription key="fontDescription" type="boldSystem" pointSize="21"/>
-                    <nil key="textColor"/>
-                    <nil key="highlightedColor"/>
-                </label>
-                <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="iee-xh-eQX">
-                    <rect key="frame" x="144" y="740" width="105" height="35"/>
-                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                    <state key="normal" title="Button"/>
-                    <buttonConfiguration key="configuration" style="filled" title="Start track"/>
-                    <connections>
-                        <action selector="startTripAction:" destination="-1" eventType="touchUpInside" id="h1c-cO-2rX"/>
-                    </connections>
-                </button>
                 <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="mappin" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="hJK-g7-1aW">
                     <rect key="frame" x="181" y="398.33333333333331" width="30" height="30"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                     <color key="tintColor" systemColor="systemRedColor"/>
                 </imageView>
-                <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="eQ8-1r-jWz">
-                    <rect key="frame" x="118" y="783" width="157" height="35"/>
-                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                    <state key="normal" title="Button"/>
-                    <buttonConfiguration key="configuration" style="filled" title="Start region track"/>
-                    <connections>
-                        <action selector="startRegionTrackAction:" destination="-1" eventType="touchUpInside" id="xij-qf-bBj"/>
-                    </connections>
-                </button>
             </subviews>
             <viewLayoutGuide key="safeArea" id="fnl-2z-Ty3"/>
             <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-            <constraints>
-                <constraint firstItem="UgF-c9-PKd" firstAttribute="top" secondItem="fnl-2z-Ty3" secondAttribute="top" constant="20" id="5kj-Wc-vMs"/>
-                <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="UgF-c9-PKd" secondAttribute="trailing" constant="20" id="Mg9-0b-Uah"/>
-                <constraint firstItem="UgF-c9-PKd" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" constant="20" id="o8S-AA-aeU"/>
-            </constraints>
             <point key="canvasLocation" x="32.824427480916029" y="20.422535211267608"/>
         </view>
     </objects>

@@ -21,6 +21,7 @@
 		4FC65CC82AE652FE00D2E2C5 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FC65CC72AE652FE00D2E2C5 /* LocationManager.swift */; };
 		4FC65CCB2AE69FAC00D2E2C5 /* UIKitLocationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FC65CC92AE69FAC00D2E2C5 /* UIKitLocationController.swift */; };
 		4FC65CCC2AE69FAC00D2E2C5 /* UIKitLocationController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4FC65CCA2AE69FAC00D2E2C5 /* UIKitLocationController.xib */; };
+		4FCA8CFD2B03776400E70572 /* SheetViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FCA8CFC2B03776400E70572 /* SheetViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +42,7 @@
 		4FC65CC92AE69FAC00D2E2C5 /* UIKitLocationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIKitLocationController.swift; sourceTree = "<group>"; };
 		4FC65CCA2AE69FAC00D2E2C5 /* UIKitLocationController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = UIKitLocationController.xib; sourceTree = "<group>"; };
 		4FC65CCF2AE6B8CB00D2E2C5 /* LocationMock.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = LocationMock.gpx; sourceTree = "<group>"; };
+		4FCA8CFC2B03776400E70572 /* SheetViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -129,6 +131,7 @@
 				4FC65CC92AE69FAC00D2E2C5 /* UIKitLocationController.swift */,
 				4FC65CCA2AE69FAC00D2E2C5 /* UIKitLocationController.xib */,
 				4FC65CCF2AE6B8CB00D2E2C5 /* LocationMock.gpx */,
+				4FCA8CFC2B03776400E70572 /* SheetViewController.swift */,
 			);
 			path = LocationTrack;
 			sourceTree = "<group>";
@@ -207,6 +210,7 @@
 			files = (
 				4FC65CC82AE652FE00D2E2C5 /* LocationManager.swift in Sources */,
 				4F7199132AEA674F005C552C /* DogAnnotation.swift in Sources */,
+				4FCA8CFD2B03776400E70572 /* SheetViewController.swift in Sources */,
 				4F2E3B862AE7C46500C8D508 /* CarAnnotation.swift in Sources */,
 				4F7199112AEA6560005C552C /* CustomAnnotation.swift in Sources */,
 				4FC65CB82AE650AC00D2E2C5 /* ViewController.swift in Sources */,

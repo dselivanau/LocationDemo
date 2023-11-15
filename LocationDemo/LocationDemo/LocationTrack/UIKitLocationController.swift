@@ -17,10 +17,6 @@ final class UIKitLocationController: UIViewController {
     
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var addressPickerImage: UIImageView!
-    @IBOutlet weak var addressLabel: UILabel!
-    @IBOutlet weak var startTripButton: UIButton!
-    @IBOutlet weak var startRegionTrackButton: UIButton!
-    @IBOutlet weak var trackUserImageView: UIImageView!
     
     var carPosition: AnnotationPosition?
     var carAnnotationView: MKAnnotationView!
@@ -28,20 +24,53 @@ final class UIKitLocationController: UIViewController {
     var carPositionTimer = Timer()
     var currentRoute: MKOverlay?
     var trackType: TrackType = .foreground
+    var destination: CLLocationCoordinate2D?
+    lazy var sheetController: SheetViewController = {
+        let vc = SheetViewController()
+        vc.sheetDelegate = self
+        return vc
+    }()
+    
+    var sheetPresentation: UISheetPresentationController!
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        let navVC = UINavigationController(rootViewController: sheetController)
+        navVC.isModalInPresentation =  true
+        if let sheet = navVC.sheetPresentationController {
+            sheetPresentation = sheet
+            sheet.preferredCornerRadius = 40
+            sheet.prefersGrabberVisible = true
+            changeSheetDetents(multipleSize: 0.3)
+            sheet.largestUndimmedDetentIdentifier = .some(UISheetPresentationController.Detent.Identifier("test"))
+        }
+        navigationController?.present(navVC, animated: true)
+        
         mapView.delegate = self
-        LocationManager.shared.startTrackForegroundLocation()
+//        LocationManager.shared.startTrackForegroundLocation()
         mapView.showsUserTrackingButton = true
+        
+        let region = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: LocationManager.shared.latitude, longitude: LocationManager.shared.longitude), span: MKCoordinateSpan.init(latitudeDelta: 0.1, longitudeDelta: 0.1))
+        mapView.setRegion(region, animated: true)
+        
         // Если вы хотите отслежить себя на карте - можно оперировать пропертей которая закоменчена ниже
         // Однако если аннотация MKUserLocation переопределена и скрыта - изменение этого свойства ничего не даст
 //        mapView.showsUserLocation = true
     }
     
+    private func changeSheetDetents(multipleSize: CGFloat) {
+        sheetPresentation.animateChanges {
+            sheetPresentation.detents = [.custom(identifier: .some(UISheetPresentationController.Detent.Identifier("test")), resolver: { context in
+                multipleSize * context.maximumDetentValue
+            })]
+        }
+    }
+    
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         carPositionTimer.invalidate()
+        sheetController.dismiss(animated: true)
     }
     
     deinit {
@@ -49,18 +78,8 @@ final class UIKitLocationController: UIViewController {
         LocationManager.shared.stopTrackForegroundLocation()
     }
     
-    // setVisibleMapRect - отвечает за зум нашей карты отностительно построенного роута
-    private func configureTripRoute(setVisibleMapRect: Bool = false) {
-        guard let carLatitude = carPosition?.latitude, let carLongitude = carPosition?.longitude else { return }
-        
-        // Создаем реквест по которому будем вычислять роут
-        let request = MKDirections.Request()
-        request.source = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: carLatitude, longitude: carLongitude), addressDictionary: nil))
-        request.destination = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 37.73471755, longitude: -122.45290792), addressDictionary: nil))
-        request.transportType = .automobile
-        
-        let directions = MKDirections(request: request)
-        // Высчитывает всю информарцию роута по начальным и конечным координатам
+    private func configureTripDetails(carLatitude: CLLocationDegrees, carLongitude: CLLocationDegrees, setVisibleMapRect: Bool = false) {
+        let directions = configureDirectionByRequest(carLatitude: carLatitude, carLongitude: carLongitude)
         directions.calculate { [weak self] response, error in
             
             guard let self = self, let response = response else { return }
@@ -74,28 +93,36 @@ final class UIKitLocationController: UIViewController {
                 // Накладываем новый сгенерированный маршрут на карту
                 mapView.addOverlay(route.polyline)
                 currentRoute = route.polyline
+                sheetController.averageTime.text = route.expectedTravelTime.asString(style: .abbreviated)
                 
                 // Если это первый рендер карты - делаем автоматический зум относительно нашего роута с отступом в 30 поинтов от краев экрана, мы хотим это сделать единожды
                 // чтобы исключить зум при каждом пересчете маршрута
                 if setVisibleMapRect {
-                    mapView.setVisibleMapRect(route.polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 30, left: 30, bottom: 30, right: 30), animated: true)
+                    mapView.setVisibleMapRect(route.polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 30, left: 30, bottom: sheetPresentation.presentedViewController.view.frame.height, right: 30), animated: true)
                 }
             }
         }
+    }
+    
+    // setVisibleMapRect - отвечает за зум нашей карты отностительно построенного роута
+    private func configureTripRoute(setVisibleMapRect: Bool = false) {
+        guard let carLatitude = carPosition?.latitude, let carLongitude = carPosition?.longitude else { return }
+        
+        configureTripDetails(carLatitude: carLatitude, carLongitude: carLongitude, setVisibleMapRect: setVisibleMapRect)
         
         if setVisibleMapRect {
             let basePoint = CLLocationCoordinate2D(latitude: carLatitude, longitude: carLongitude)
             let angle = calculateBearingAngle(fromCoordinate: basePoint, toCoordinate: basePoint)
             carAnnotation = CarAnnotation(title: "", coordinate: CLLocationCoordinate2D(latitude: carLatitude, longitude: carLongitude), rotationAnge: angle.toRadians())
             // Добавляем аннотацию
-            mapView.addAnnotation(DogAnnotation(coordinate: CLLocationCoordinate2D(latitude: 37.73471755, longitude: -122.45290792)))
+            mapView.addAnnotation(DogAnnotation(coordinate: CLLocationCoordinate2D(latitude: destination?.latitude ?? 0, longitude: destination?.longitude ?? 0)))
             // Добавляем аннотацию машины
             mapView.addAnnotation(carAnnotation)
             // Добавляем кастомную аннотацию для демонстрации простых глифов
             mapView.addAnnotation(CustomAnnotation(coordinate: CLLocationCoordinate2D(latitude: 37.53471755, longitude: -122.35290792)))
             if trackType == .region {
                 let regionCenter = CLLocationCoordinate2D(latitude: 37.33453849, longitude: -122.03695223)
-                let regionRadius: CLLocationDistance = 150
+                let regionRadius: CLLocationDistance = LocationManager.shared.regionRadiusToTriggerLocationUpdate
                 let regionCircle = MKCircle(center: regionCenter, radius: regionRadius)
                 // Добавляем overlay для отрисовки региона
                 mapView.addOverlay(regionCircle)
@@ -112,36 +139,25 @@ final class UIKitLocationController: UIViewController {
             if let customAnnotationView = mapView.view(for: annotation) {
                 // Анимируем угол поворота относительно направления движения
                 // Рекомендую поставить это значение в разы меньше(по моим наблюдениям для движения автомобиля отлично подходят значения от 1 до 2), иначе поворот угла выглядет
-                // не естественным из-за плавности и большой/короткой длительности
+                // не естественным из-за плавности и большой/малой длительности
                 UIView.animate(withDuration: 1, delay: 0, options: [.curveLinear]) {
                     customAnnotationView.transform = CGAffineTransform(rotationAngle: angle.toRadians())
                 }
             }
             // Анимируем движение между 2 координатами
             // Длительность анимации равна периодичности таймера, чтобы движение ощущалось плавным и постоянным
-            UIView.animate(withDuration: 2.5, delay: 0, options: [.curveLinear]) { [weak self] in
-                self?.carAnnotation.coordinate = CLLocationCoordinate2D(latitude: carLatitude, longitude: carLongitude)
+            UIView.animate(withDuration: 2.5, delay: 0, options: [.curveLinear]) {
+                self.carAnnotation.coordinate = CLLocationCoordinate2D(latitude: carLatitude, longitude: carLongitude)
             }
             // Тип анимации для всего что связано с автомобилем рекомендую curveLinear для исключения дерганного поведения и постоянных ускорений/замедлений что, как по мне,
             // выглядит довольно не естественно
         }
     }
-
-    @IBAction func startTripAction(_ sender: Any) {
-        startTrack(.foreground)
-    }
-    
-    @IBAction func startRegionTrackAction(_ sender: Any) {
-        startTrack(.region)
-//        LocationManager.shared.startMonitorRegionLocation()
-    }
     
     private func startTrack(_ trackType: TrackType) {
+        mapView.removeAnnotations(mapView.annotations)
         self.trackType = trackType
         addressPickerImage.isHidden = true
-        startTripButton.isHidden = true
-        startRegionTrackButton.isHidden = true
-        addressLabel.isHidden = true
         carPosition = AnnotationPosition(latitude: LocationManager.shared.latitude, longitude: LocationManager.shared.longitude)
         configureTripRoute(setVisibleMapRect: true)
         carPositionTimer = Timer.scheduledTimer(timeInterval: 2.5, target: self, selector: #selector(updateCarPosition), userInfo: nil, repeats: true)
@@ -174,6 +190,64 @@ final class UIKitLocationController: UIViewController {
 
         return (bearingDegrees + 360.0).truncatingRemainder(dividingBy: 360.0)
     }
+    
+    func configureDirectionByRequest(carLatitude: CLLocationDegrees, carLongitude: CLLocationDegrees) -> MKDirections {
+        // Создаем реквест по которому будем вычислять роут
+        let request = MKDirections.Request()
+        request.source = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: carLatitude, longitude: carLongitude), addressDictionary: nil))
+        request.destination = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: destination?.latitude ?? 0, longitude: destination?.longitude ?? 0), addressDictionary: nil))
+        request.transportType = .automobile
+        
+        return MKDirections(request: request)
+    }
+    
+    func calculateTime() {
+        let directions = configureDirectionByRequest(carLatitude: LocationManager.shared.latitude, carLongitude: LocationManager.shared.longitude)
+        directions.calculate { [weak self] response, error in
+            
+            guard let self = self, let response = response else { return }
+            
+            for route in response.routes {
+                sheetController.averageTime.text = route.expectedTravelTime.asString(style: .abbreviated)
+            }
+        }
+    }
+}
+
+extension UIKitLocationController: SheetViewControllerDelegate {
+    func hideDetails() {
+        LocationManager.shared.stopTrackForegroundLocation()
+        addressPickerImage.isHidden = false
+        destination = nil
+        currentRoute = nil
+        mapView.removeAnnotations(mapView.annotations)
+        mapView.removeOverlays(mapView.overlays)
+        sheetController.startTrackStackView.isHidden = true
+        sheetController.hideDetailsButton.isHidden = true
+        carPositionTimer.invalidate()
+        mapView.userTrackingMode = .none
+    }
+    
+    func startTrack() {
+        LocationManager.shared.startTrackForegroundLocation()
+        startTrack(.foreground)
+    }
+    
+    func startRegionTrack() {
+        LocationManager.shared.startMonitorRegionLocation()
+        startTrack(.region)
+    }
+    
+    func calculateRoute() {
+        mapView.removeAnnotations(mapView.annotations)
+        carPosition = AnnotationPosition(latitude: LocationManager.shared.latitude, longitude: LocationManager.shared.longitude)
+        configureTripRoute(setVisibleMapRect: true)
+        sheetController.startTrackStackView.isHidden = false
+        sheetController.hideDetailsButton.isHidden = false
+        addressPickerImage.isHidden = true
+    }
+    
+    
 }
 
 extension UIKitLocationController: MKMapViewDelegate {
@@ -236,16 +310,31 @@ extension UIKitLocationController: MKMapViewDelegate {
     
     // Делегат отрабатывает когда карта начинает менять свое положение
     func mapView(_ mapView: MKMapView, regionWillChangeAnimated animated: Bool) {
-        addressLabel.text = ""
-        startTripButton.isEnabled = false
+        if mapView.userTrackingMode == .none {
+            if !carPositionTimer.isValid {
+                sheetController.destinationAddress.text = ""
+                sheetController.averageTime.text = ""
+            }
+            
+            changeSheetDetents(multipleSize: 0.015)
+        }
     }
     
     // Делегат отрабатывает когда камера карты останавливается
     func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
         let location = mapView.camera.centerCoordinate
+        if !addressPickerImage.isHidden {
+            destination = location
+        }
         LocationManager.shared.geocodeLocation(lattitude: location.latitude, longitude: location.longitude) { [weak self] value in
-            self?.addressLabel.text = value ?? ""
-            self?.startTripButton.isEnabled = value != nil
+            guard let self else { return }
+            if !self.carPositionTimer.isValid {
+                self.sheetController.destinationAddress.text = value ?? ""
+            }
+            if mapView.userTrackingMode == .none {
+                self.changeSheetDetents(multipleSize: 0.3)
+            }
+            self.calculateTime()
         }
     }
     
@@ -274,3 +363,5 @@ extension UIKitLocationController: MKMapViewDelegate {
     }
     
 }
+
+
