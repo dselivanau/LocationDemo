@@ -14,6 +14,11 @@ protocol SheetViewControllerDelegate: AnyObject {
     func calculateRoute()
 }
 
+enum SheetType {
+    case supportGeo
+    case unsupportGeo
+}
+
 final class SheetViewController: UIViewController {
     
     weak var sheetDelegate: SheetViewControllerDelegate?
@@ -94,14 +99,22 @@ final class SheetViewController: UIViewController {
         stackView.isHidden = true
         return stackView
     }()
+    
+    lazy var notSupportedLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = UIFont.boldSystemFont(ofSize: 30)
+        label.text = "Unknown country"
+        return label
+    }()
+    
+    var geoStatus: SheetType = .supportGeo
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         view.backgroundColor = .white
-        configureView()
-        setupConstaints()
-        // Do any additional setup after loading the view.
+        configureSheetDetails(isSupportedCountry: true)
     }
     
     private func configureView() {
@@ -109,9 +122,25 @@ final class SheetViewController: UIViewController {
         view.addSubview(destinationAddress)
         view.addSubview(averageTimeTitle)
         view.addSubview(averageTime)
-//        view.addSubview(calculateButton)
         view.addSubview(detailsStackView)
         view.addSubview(startTrackStackView)
+    }
+    
+    func configureSheetDetails(isSupportedCountry: Bool) {
+        view.subviews.forEach { view in
+            view.removeFromSuperview()
+        }
+        if isSupportedCountry {
+            configureView()
+            setupConstaints()
+        } else {
+            view.addSubview(notSupportedLabel)
+            NSLayoutConstraint.activate([
+                notSupportedLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: defaultSpacing),
+                notSupportedLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -defaultSpacing),
+                notSupportedLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 30)
+            ])
+        }
     }
     
     private func setupConstaints() {

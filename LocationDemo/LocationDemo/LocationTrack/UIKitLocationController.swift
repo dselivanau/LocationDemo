@@ -326,15 +326,35 @@ extension UIKitLocationController: MKMapViewDelegate {
         if !addressPickerImage.isHidden {
             destination = location
         }
-        LocationManager.shared.geocodeLocation(lattitude: location.latitude, longitude: location.longitude) { [weak self] value in
+        LocationManager.shared.geocodeLocation(lattitude: location.latitude, longitude: location.longitude) { [weak self] result in
             guard let self else { return }
-            if !self.carPositionTimer.isValid {
-                self.sheetController.destinationAddress.text = value ?? ""
-            }
-            if mapView.userTrackingMode == .none {
+            switch result {
+            case .success(let value):
+                if sheetController.geoStatus == .unsupportGeo {
+                    sheetController.configureSheetDetails(isSupportedCountry: true)
+                }
+                sheetController.geoStatus = .supportGeo
+                if !self.carPositionTimer.isValid {
+                    self.sheetController.destinationAddress.text = value ?? ""
+                }
+                if mapView.userTrackingMode == .none {
+                    self.changeSheetDetents(multipleSize: 0.3)
+                }
+                self.calculateTime()
+            case .failure(let error):
+                if sheetController.geoStatus == .supportGeo {
+                    sheetController.configureSheetDetails(isSupportedCountry: false)
+                }
+                sheetController.geoStatus = .unsupportGeo
                 self.changeSheetDetents(multipleSize: 0.3)
+                guard let geoError = error as? GeocodeError else {
+                    return
+                }
+                switch geoError {
+                case let .unsupportCountry(country):
+                    sheetController.notSupportedLabel.text = "Unsupport \(country ?? "country")"
+                }
             }
-            self.calculateTime()
         }
     }
     

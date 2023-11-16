@@ -9,6 +9,10 @@ import Foundation
 import CoreLocation
 import UIKit
 
+enum GeocodeError: Error {
+    case unsupportCountry(country: String?)
+}
+
 final class LocationManager: NSObject {
     static let shared = LocationManager()
         
@@ -52,11 +56,12 @@ final class LocationManager: NSObject {
         stopTrackForegroundLocation()
     }
     
-    func geocodeLocation(lattitude: CLLocationDegrees, longitude: CLLocationDegrees, completion: @escaping (String?) -> Void) {
+    func geocodeLocation(lattitude: CLLocationDegrees, longitude: CLLocationDegrees, completion: @escaping (Result<String?, Error>) -> Void) {
         let location = CLLocation(latitude: lattitude, longitude: longitude)
         return geocoder.reverseGeocodeLocation(location, completionHandler: { (placemarks, error) in
-            guard let placemark = placemarks?.first else { completion(""); return }
-            completion(placemark.name)
+            guard let placemark = placemarks?.first else { completion(.success("")); return }
+            guard placemark.country == "United States" else { completion(.failure(GeocodeError.unsupportCountry(country: placemark.country))); return}
+            completion(.success(placemark.name))
         })
     }
     
